@@ -1,0 +1,285 @@
+---
+title: "Personal Consumption Structure in each State"
+author: "You Shan Shen"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup,, include = FALSE, echo = FALSE}
+library(tidyverse)
+library(lubridate)
+library(gt)
+library(paletteer)
+library(ggridges)
+library(plotly)
+library(gtExtras)
+library(sf)
+library(ggmap)
+library(tidycensus)
+library(leaflet)
+library(osmdata)
+library(tigris)
+library(ggsflabel)
+library(ggthemes)
+library(formattable)
+library(leaflegend)
+library(knitr)
+knitr::opts_knit$set(echo = TRUE, 
+root.dir = rprojroot::find_rstudio_root_file())
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, error = FALSE, message = FALSE)
+
+knitr::opts_chunk$set(
+  fig.width = 6,
+  out.width = "90%",
+ fig.align  = "center",
+  cache = FALSE,
+  eval  = TRUE,
+  echo  = TRUE,
+  warning = FALSE
+)
+
+
+theme_set(theme(plot.title = element_text(hjust = 0.5), legend.position = "right"))
+```
+
+```{r read files, include = FALSE}
+file_dir  <- "./data/SAGDP"
+data_files <- list.files(file_dir)
+file_paths <- str_c(file_dir, data_files)
+word_extractor <- function(string, sep, index) {
+  word <- str_split_fixed(string, sep, str_length(string))[, index] %>% 
+          str_replace_all("[[:punct:]]", "") 
+  return(word) 
+}
+
+t1_file_list <- list.files(file_dir, pattern = "SAGDP2N")
+t1_file_list <- t1_file_list[!str_detect(t1_file_list, c("AREAS", "definition", "Footnotes" , "modify"))]
+
+personal_consumption.df <- tibble(
+           file_dir   = "./data/SAGDP/", 
+           file_list  = t1_file_list, 
+           state      = word_extractor(string = file_list, sep = "[_]", index = 2),
+           file_paths = str_c(file_dir, file_list)) %>%
+  dplyr::select(state, file_paths)
+
+personal_consumption_data <- personal_consumption.df %>%
+  mutate( 
+    data = map(.x = file_paths, ~read_csv(.x, show_col_types = FALSE, na = c("(L)","(D)","(NA)")))) %>%
+  dplyr::select(-file_paths) %>%
+  unnest() %>%
+  filter(!LineCode %in% NA,
+         !GeoName %in% 'United States *',
+         !Description %in% c("All industry total","Private industries")) %>%
+  select(!c(`1997`:`2009`) & !c(`2021`) & !c(`Unit`))
+
+```
+
+```{r, results = 'hide', fig.show='hide', include = FALSE}
+library(DataExplorer)
+data_explore_df  <- personal_consumption_data  
+DataExplorer::introduce(data_explore_df)
+DataExplorer::plot_missing(data_explore_df )
+DataExplorer::plot_bar(data_explore_df )
+DataExplorer::plot_histogram(data_explore_df)
+```
+
+```{r map legend color, include = FALSE }
+ total_consumption <- personal_consumption_data %>% 
+  nest(c(`2010`:`2018`)) %>%
+  mutate(
+    description_sum = map(.x = data, ~ .x %>% rowSums(na.rm = TRUE))) %>%
+  unnest() %>%
+  group_by(GeoName) %>%
+  mutate( state_sum = sum(description_sum, na.rm = TRUE)) %>%
+   select(c(GeoName,state_sum)) %>%
+   unique() %>%
+   arrange(desc(state_sum)) %>%
+   filter(!(GeoName %in% c("Southeast","Far West","Mideast","Great Lakes","Southeast","Plains","Rocky Mountain","New England","Puerto Rico", "Southwest", "District of Columbia"))) %>%
+   mutate(state_sum = state_sum/1000000) %>%
+   mutate(
+   GeoName = fct_reorder(GeoName, state_sum, .desc = FALSE)
+  )
+
+```
+```{r before covid, include = FALSE}
+
+pre_covid_percent_consumption_df <- personal_consumption_data %>% 
+  nest(c(`2010`:`2018`)) %>%
+  mutate(
+    description_sum = map(.x = data, ~ .x %>% rowSums(na.rm = TRUE))) %>%
+unnest() %>%
+  group_by(GeoName) %>%
+  mutate( state_sum = sum(description_sum, na.rm = TRUE)) %>%
+   mutate( consumption_percent =  description_sum/state_sum,
+          consumption_percent = consumption_percent*100) %>%
+  mutate( across(c(consumption_percent ), ~ percent(.)/100)) %>%
+  ungroup()
+
+  
+top3_comsumption <- pre_covid_percent_consumption_df  %>%
+  group_by(GeoName) %>%
+  arrange(desc(consumption_percent)) %>%
+  group_by(GeoName) %>%
+  slice(1:3)
+
+
+review_precovid <- top3_comsumption %>%
+  select( c(GeoName, Description, consumption_percent)) %>%
+  rename( "Pre-COVID consumption %" = consumption_percent ) %>%
+  mutate(
+Description = case_when(
+Description %in% "Private services-providing industries 3/" ~ "Providing industries",
+Description %in% "Private goods-producing industries 2/" ~ "Producing industries",
+Description %in% "Manufacturing and information" ~ "Manufacturing",
+Description %in% "Government and government enterprises" ~ "Gov. enterprises",
+Description %in% "Finance, insurance, real estate, rental, and leasing" ~ "Finance",
+Description %in% "Federal civilian" ~ "Federal civilian",
+Description %in% "Real estate and rental and leasing" ~ "Real estate",
+Description %in% "Professional and business services" ~ "Business services",
+Description %in% "Natural resources and mining" ~ "Natural resources",
+Description %in% "Arts, entertainment, recreation, accommodation, and food services"~ "Arts, recreation", 
+TRUE ~ Description
+)) %>%
+   mutate("Description" = str_c(`Description`, `Pre-COVID consumption %`, sep = " : ",collapse = NULL))
+
+review_precovid %>% gt_preview()
+
+```
+
+
+```{r after covid, include = FALSE}
+
+after_covid_percent_personal_consumption_df <- personal_consumption_data %>% 
+  nest(c(`2019`:`2020`)) %>%
+  mutate(
+    description_sum = map(.x = data, ~ .x %>% rowSums(na.rm = TRUE))) %>%
+unnest() %>%
+  group_by(GeoName) %>%
+  mutate( state_sum = sum(description_sum, na.rm = TRUE)) %>%
+  mutate( consumption_percent =  description_sum/state_sum,
+          consumption_percent = consumption_percent*100) %>%
+   mutate( across(c(consumption_percent ), ~ percent(.)/100)) %>%
+  ungroup()
+  
+  
+after_covid_top3_comsumption <- after_covid_percent_personal_consumption_df %>%
+  group_by(GeoName) %>%
+  arrange(desc(consumption_percent)) %>%
+  group_by(GeoName) %>%
+  slice(1:3)
+
+review_after_covid <- after_covid_top3_comsumption %>%
+  select( c(GeoName, Description, consumption_percent)) %>%
+    rename( "After COVID consumption %" = consumption_percent ) %>%
+  mutate(
+Description = case_when(
+Description %in% "Private services-providing industries 3/" ~ "Providing industries",
+Description %in% "Private goods-producing industries 2/" ~ "Producing industries",
+Description %in% "Manufacturing and information" ~ "Manufacturing",
+Description %in% "Government and government enterprises" ~ "Gov. enterprises",
+Description %in% "Finance, insurance, real estate, rental, and leasing" ~ "Finance",
+Description %in% "Federal civilian" ~ "Federal civilian",
+Description %in% "Real estate and rental and leasing" ~ "Real estate",
+Description %in% "Professional and business services" ~ "Business services",
+Description %in% "Natural resources and mining" ~ "Natural resources",
+TRUE ~ Description
+)) %>%
+   mutate("Description" = str_c(`Description`, `After COVID consumption %`, sep = " : ",collapse = NULL))
+
+review_after_covid %>% gt_preview()
+```
+
+
+
+
+
+```{r leaflet setting, , include = FALSE}
+
+us_state.df <- st_read("./data/state sf/cb_2020_us_state_5m.shp") %>%
+  janitor::clean_names() %>%
+  select(c("name", "geometry")) %>%
+   filter(!(name %in% c("Puerto Rico"))) 
+
+
+review_after_covid  %>% nest(-c(GeoName)) %>% distinct(GeoName)
+review_precovid  %>% nest(-c(GeoName)) %>% distinct(GeoName)
+
+
+covid_summary_top3 <- bind_cols(review_after_covid, review_precovid) %>%
+  select(-c("GeoName...4"))  %>%
+  rename( "After-COVID" = Description...2,
+          "Pre-COVID" = Description...5 ) %>%
+  mutate("Consumption Type" = str_c(`After-COVID`, `Pre-COVID`, sep = " | ",collapse = NULL),
+         "Percent %" = str_c(`After COVID consumption %`, `Pre-COVID consumption %`, sep = " | ",collapse = NULL)) %>%
+  select(c("GeoName...1", "Consumption Type", "Percent %")) %>%
+  rename("State" = "GeoName...1") %>%
+  select(-`Percent %`) %>%
+  group_by(State)
+
+leaflet_label.df <- reshape(
+  transform( covid_summary_top3,
+             q = ave(State, State, FUN = seq_along)),
+  direction = "wide",
+  idvar = "State",
+  timevar = "q" )  %>%
+  rename("1st Consumption" = "Consumption.Type.1",
+         "2nd Consumption" = "Consumption.Type.2",
+         "3rd Consumption" = "Consumption.Type.3")
+  
+              
+us_geo.df <- left_join( us_state.df,
+                        leaflet_label.df,
+                         by = c( "name" = "State") ) %>%
+  mutate( period = "After-Covid vs Pre-Covid")
+  
+  
+
+library(viridis, quietly = TRUE)
+
+us_label.df <- right_join(us_geo.df, total_consumption, by = c( "name" = "GeoName") ) %>%
+  mutate( text_label = str_c("<br/>State: ", name,
+                             "<br/>Period: ", period,
+                             "<br/>1st Consumption :",`1st Consumption`,
+                             "<br/>2nd Consumption :",`2nd Consumption`,
+                             "<br/>3rd Consumption :",`3rd Consumption`)) %>%
+  na.omit()
+  
+
+qpal <- colorNumeric(palette = "Oranges", domain = us_label.df$state_sum)
+  
+```
+```{r leaflet, echo = FALSE, fig.width = 4, fig.height = 6}
+leaflet(data = us_label.df ) %>%
+  addTiles() %>%
+  fitBounds(~-200,~18, ~-30,~80) %>%
+  addProviderTiles('Esri.WorldStreetMap') %>%
+  addPolygons(label = ~map(text_label, html),
+              labelOptions = labelOptions(
+                style = list("font-weight" = "normal", padding = "3px 8px"),
+                textsize = "10px"),
+              fillColor = ~qpal(us_label.df$state_sum),
+              fillOpacity = 1,
+              weight = 2,
+              color = "IndianRed",
+              dashArray = "3",
+              highlightOptions = highlightOptions(
+                weight = 3, 
+                color = "black",
+                dashArray = "", 
+                fillOpacity = 1)) %>%
+  addLegend(pal = qpal, values = ~us_label.df$state_sum, opacity = 0.7, title = "10yrs Personal Consumption Accumulation", position = "bottomright",
+      labFormat = labelFormat(prefix = '', suffix = 'M', digits = 6, big.mark = ',', transform = identity)) 
+````
+
+***
+
+PCE(Personal Consumption Expenditures) by state highlights
+
+- Providing industries is the highest percentage in each state. It indicates that service industries are the most demanding aspect in all the consumption categories.
+- Overall, compared with Pre-COVID, the top3 industry and their percentage didn’t change a lot in each state regardless of the total consumption.
+- In recent ten years, the highest personal consumption expenditures states are California, New York, and Texas.
+
+
+

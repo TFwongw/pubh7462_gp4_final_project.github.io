@@ -1,0 +1,32 @@
+name: "Economic Trend Analysis 2010-2021"
+header-includes: 
+  \usepackage{graphicx}
+  \usepackage{float}
+output_dir: "."
+navbar:
+  title: "Overview"
+  left:
+    - text: "Data"
+      href: data.html
+  right: 
+    - text: "Industry GDP Analysis" 
+      menu:
+        - text: "Summary"
+          href: 
+        - text: "US Industry GDP Trend"
+          href: https://2wuq4h-tsz0fung-wong.shinyapps.io/GDP_industry_db/?_ga=2.221513117.444179170.1651694671-1921955658.1651694671
+      
+    - text: "Consumption Category Analysis"
+      menu:
+        - text: "Sptaial Analysis"
+          href:  personal_consumption.html
+        - text: "Consumption Shiny Dashboard"
+          href:  https://youshanshen.shinyapps.io/Personal_consumption/
+    - icon: fa-envelope fa-lg
+      href: mailto:<wong0755@umn.edu>
+    - icon: fa-github fa-lg
+      href: http://github.com/TFwongw/ 
+      
+output:  
+   html_document:
+    theme: flatly

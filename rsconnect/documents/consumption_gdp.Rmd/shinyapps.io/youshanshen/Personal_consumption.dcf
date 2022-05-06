@@ -1,0 +1,13 @@
+name: Personal_consumption
+title: Personal_consumption
+username:
+account: youshanshen
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 6251432
+bundleId: 5879707
+url: https://youshanshen.shinyapps.io/Personal_consumption/
+when: 1651876362.00921
+lastSyncTime: 1651876362.00921
+asMultiple: FALSE
+asStatic: FALSE
