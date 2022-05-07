@@ -20,7 +20,6 @@ library(sf)
 library(tidycensus)
 library(osmdata)
 library(tigris)
-library(ggsflabel)
 library(ggthemes)
 library(leaflegend)
 library(knitr)
@@ -56,12 +55,7 @@ options(dplyr.summarise.inform = FALSE)
 ```{r extract_specific data}
 file_dir  <- "./data/SAGDP"
 data_files <- list.files(file_dir)
-file_paths <- str_c(file_dir, data_files)
-word_extractor <- function(string, sep, index) {
-  word <- str_split_fixed(string, sep, str_length(string))[, index] %>% 
-          str_replace_all("[[:punct:]]", "") 
-  return(word) 
-}
+file_paths <- str_c(file_dir, data_files) 
 
 t1_file_list <- list.files(file_dir, pattern = "SAGDP2N")
 t1_file_list <- t1_file_list[!str_detect(t1_file_list, c("AREAS", "definition", "Footnotes" , "modify"))]
@@ -69,7 +63,7 @@ t1_file_list <- t1_file_list[!str_detect(t1_file_list, c("AREAS", "definition", 
 personal_consumption.df <- tibble(
            file_dir   = "./data/SAGDP/", 
            file_list  = t1_file_list, 
-           state      = word_extractor(string = file_list, sep = "[_]", index = 2),
+           state      = map(str_split(string = file_list, "_"), 2),
            file_paths = str_c(file_dir, file_list)) %>%
   dplyr::select(state, file_paths)
 
@@ -109,7 +103,7 @@ names_to = "change_year",
 values_to = "percent_change") %>%
   mutate(percent_change = round(percent_change ,digit = 2) )
 
-geo_states <- map_data("state") %>% mutate(region = ifelse(str_detect(region, "^[:upper:]+$"), region,str_to_title(region)))
+geo_states <- map_data("state") %>% mutate(region = str_to_title(region))
 
 ##for state boundary
 geo_percent_change.df <- left_join(
@@ -237,7 +231,7 @@ percent_gg <- ggplot(geo_percent_change.df, aes(long, lat)) +
  labs(
       x = "Longitude",
       y = "Latitude",
-      title = "Total Consumption Change (%) for different State Compared with 2018"
+      title = "Total Consumption Percentage Change (%) for Different States Compared with 2018"
     ) +
    scale_fill_gradient(low='white', high='Orange')+
    theme_void()

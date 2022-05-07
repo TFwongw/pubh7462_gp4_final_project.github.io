@@ -13,7 +13,7 @@
 
 <title>Data</title>
 
-<script src="site_libs/header-attrs-2.11/header-attrs.js"></script>
+<script src="site_libs/header-attrs-2.14/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/flatly.min.css" rel="stylesheet" />
@@ -62,6 +62,7 @@ if (window.hljs) {
 
 
 
+
 <style type = "text/css">
 .main-container {
   max-width: 940px;
@@ -82,6 +83,9 @@ button.code-folding-btn:focus {
 }
 summary {
   display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
 }
 pre code {
   padding: 0;
@@ -234,7 +238,7 @@ $(document).ready(function () {
 <div class="navbar navbar-default  navbar-fixed-top" role="navigation">
   <div class="container">
     <div class="navbar-header">
-      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-bs-toggle="collapse" data-target="#navbar" data-bs-target="#navbar">
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
@@ -249,7 +253,7 @@ $(document).ready(function () {
       </ul>
       <ul class="nav navbar-nav navbar-right">
         <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Industry GDP Analysis
      
     <span class="caret"></span>
@@ -262,7 +266,7 @@ $(document).ready(function () {
   </ul>
 </li>
 <li class="dropdown">
-  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
     Consumption Category Analysis
      
     <span class="caret"></span>
@@ -305,15 +309,29 @@ $(document).ready(function () {
 <p><font size="4"></p>
 <div id="gross-domestic-product-gdp-1997-2021" class="section level3">
 <h3>Gross Domestic Product (GDP) (1997-2021)</h3>
-<p>The Gross Domestic Product (GDP) is in the unit of Billions of current dollars. We only look into the data from 2010~2021. Industry categories are divided into 16 subgroups and each subgroup contains different subitems. The unit of the GDP is the unit of billion dollars.</p>
+<p>The Gross Domestic Product (GDP) is in the unit of Billions of
+current dollars. We only look into the data from 2010~2021. Industry
+categories are divided into 16 subgroups and each subgroup contains
+different subitems. The unit of the GDP is the unit of billion
+dollars.</p>
 <p></font></p>
 <p><font size="4"></p>
 </div>
-<div id="personal-consumption-expenditures-pce-by-state-1997-2021" class="section level3">
+<div id="personal-consumption-expenditures-pce-by-state-1997-2021"
+class="section level3">
 <h3>Personal Consumption Expenditures (PCE) by State (1997-2021)</h3>
-<p>The personal consumption expenditure is the unit of Millions of current dollars. We only look into the data from 2010~2020 and use all items as industry categories in each subgroup. According to BES, BEA’s state per capita personal consumption expenditure statistics are calculated using Census Bureau midyear population estimates. These annual midyear estimates are based on the 2010 census. BEA will incorporate Census Bureau midyear population estimates based on the 2020 census results when they become available.</p>
+<p>The personal consumption expenditure is the unit of Millions of
+current dollars. We only look into the data from 2010~2020 and use all
+items as industry categories in each subgroup. According to BES, BEA’s
+state per capita personal consumption expenditure statistics are
+calculated using Census Bureau midyear population estimates. These
+annual midyear estimates are based on the 2010 census. BEA will
+incorporate Census Bureau midyear population estimates based on the 2020
+census results when they become available.</p>
 <hr />
-<p>*All data was downloaded from <a href="https://apps.bea.gov/regional/downloadzip.cfm">Bureau of Economic Analysis</a></p>
+<p>*All data was downloaded from <a
+href="https://apps.bea.gov/regional/downloadzip.cfm">Bureau of Economic
+Analysis</a></p>
 </center>
 <p></font></p>
 </div>

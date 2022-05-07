@@ -14,14 +14,12 @@ library(gt)
 library(paletteer)
 library(ggridges)
 library(plotly)
-library(gtExtras)
 library(sf)
 library(ggmap)
 library(tidycensus)
 library(leaflet)
 library(osmdata)
 library(tigris)
-library(ggsflabel)
 library(ggthemes)
 library(formattable)
 library(leaflegend)
@@ -47,12 +45,7 @@ theme_set(theme(plot.title = element_text(hjust = 0.5), legend.position = "right
 ```{r read files, include = FALSE}
 file_dir  <- "./data/SAGDP"
 data_files <- list.files(file_dir)
-file_paths <- str_c(file_dir, data_files)
-word_extractor <- function(string, sep, index) {
-  word <- str_split_fixed(string, sep, str_length(string))[, index] %>% 
-          str_replace_all("[[:punct:]]", "") 
-  return(word) 
-}
+file_paths <- str_c(file_dir, data_files) 
 
 t1_file_list <- list.files(file_dir, pattern = "SAGDP2N")
 t1_file_list <- t1_file_list[!str_detect(t1_file_list, c("AREAS", "definition", "Footnotes" , "modify"))]
@@ -60,7 +53,7 @@ t1_file_list <- t1_file_list[!str_detect(t1_file_list, c("AREAS", "definition", 
 personal_consumption.df <- tibble(
            file_dir   = "./data/SAGDP/", 
            file_list  = t1_file_list, 
-           state      = word_extractor(string = file_list, sep = "[_]", index = 2),
+           state      = map(str_split(string = file_list, "_"), 2),
            file_paths = str_c(file_dir, file_list)) %>%
   dplyr::select(state, file_paths)
 
