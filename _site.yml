@@ -9,12 +9,10 @@ navbar:
     - text: "Data"
       href: data.html
   right: 
+    - text: "Main results"
+      href: result.html
     - text: "Industry GDP Analysis" 
-      menu:
-        - text: "Summary"
-          href: 
-        - text: "US Industry GDP Trend"
-          href: https://2wuq4h-tsz0fung-wong.shinyapps.io/GDP_industry_db/?_ga=2.221513117.444179170.1651694671-1921955658.1651694671
+      href: https://2wuq4h-tsz0fung-wong.shinyapps.io/GDP_industry_db/?_ga=2.221513117.444179170.1651694671-1921955658.1651694671
       
     - text: "Consumption Category Analysis"
       menu:

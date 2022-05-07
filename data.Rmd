@@ -1,25 +1,31 @@
 ---
 title: "Data"
 ---
-
-<font size="4"> 
-
-### Gross Domestic Product (GDP) (1997-2021)
-
-The Gross Domestic Product (GDP) is in the unit of Billions of current dollars. We only look into the data from 2010~2021. Industry categories are divided into 16 subgroups and each subgroup contains different subitems. The unit of the GDP is the unit of billion dollars.
  
 
 </font>
-
 
 <font size="4"> 
 
 ### Personal Consumption Expenditures (PCE) by State (1997-2021)
 
-The personal consumption expenditure is the unit of Millions of current dollars. We only look into the data from 2010~2020 and use all items as industry categories in each subgroup. According to BES, BEA's state per capita personal consumption expenditure statistics are calculated using Census Bureau midyear population estimates. These annual midyear estimates are based on the 2010 census. BEA will incorporate Census Bureau midyear population estimates based on the 2020 census results when they become available.
+The personal consumption expenditure is in unit of Millions of current dollars. We only look into the data from 2010~2020 and use all items as industry categories in each subgroup. 
+
+State per capita personal consumption expenditure statistics are calculated using Census Bureau midyear population estimates. These annual midyear estimates are based on the 2010 census. BEA will incorporate Census Bureau midyear population estimates based on the 2020 census results when they become available.
+
+
+<font size="4"> 
+
+### Gross Domestic Product (GDP) (1997-2021)
+
+The Gross Domestic Product (GDP) dataset contains industry GDP throughout the states in US, values are listed in the unit of Millions of current dollars. 
+
+We focus on the data ranging from year 2010~2021 and the 16 industry categories, original dataset contains finer classification of industries. 
+
 
 ***
 *All data was downloaded from [Bureau of Economic Analysis]( https://apps.bea.gov/regional/downloadzip.cfm)
 
 </center>
 </font>
+

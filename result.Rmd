@@ -1,0 +1,28 @@
+---
+title: "Main Results" 
+--- 
+
+</font>
+
+
+<font size = "4">
+ 
+
+## Comsumption Pattern
+•	Overall, we can see COVID-19 starting to impact the economy in 2020 and not obvious in 2019. 
+
+• Compared to 2018, Louisiana, Oklahoma and Wyoming are the top three that have dramatic decrease in total personal consumption in 2020. In 2020, Private, Finance, and Manufacturing are the top3 highest in consumption.
+
+•	Overall, in 2019-2020, the economic structure in consumption didn’t change a lot in each state. 
+
+•	During the COVID-19, mining, entertainment, and accommodation have a huge decrease in GDP percentage change. Also, GDP decrease in 2019 and 2020 but seems to be recovered in 2021. In general, California, New York, and Texas are the top3 GDP contributor among all the their states.
+
+### Industry Production 
+• Consistent with changes in the consumption patterns, year 2020 shows the  most dramatic impacts caused by COVID-19. 
+
+• California, New York, Texas and Florida are  the top GDP contributors in high value-added industries production. High production value is the main pillar for high consumption pattern. 
+
+• Low value-added industry are the ones that is most severely impacted during COVID-19 period, except for Agriculture and Utilities. 
+
+• Whereas Finance and insurance, Information industries only suffer soft impacts, demonstrating high adaptability in volatile economic environment. 
+</font>
