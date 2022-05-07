@@ -1,0 +1,249 @@
+---
+title: "US Industry GDP"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: scroll 
+    theme: paper
+    source_code: embed
+runtime: shiny
+---
+  
+```{r setup, include = FALSE, echo = FALSE}
+library(tidyverse)
+library(lubridate)
+library(gt)
+library(paletteer)
+library(plotly)
+library(flexdashboard)
+library(shiny)
+library(leaflet)
+# library(ggrepel)
+
+#Controlling figure output in markdown
+knitr::opts_chunk$set(
+  #  fig.height =   
+  fig.width = 6,
+  #  fig.asp = .5,
+  out.width = "90%",
+  #  out.height = 
+  fig.align  = "center",
+  cache = FALSE,
+  eval  = TRUE,
+  echo  = FALSE,
+  warning = FALSE
+)
+
+#My Colours (from viridis)
+my_purple <- "#440154FF"
+my_yellow <- "#FDE725FF"
+
+#Set Theme for ggplot2
+theme_set(theme_bw() + theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom"))
+
+#Set Scientific notation output and decimal places for knitr
+options(scipen = 999)
+options(digits = 4)
+options(dplyr.summarise.inform = FALSE)
+```
+
+```{r data_read, include = FALSE}
+IndustryGDP <- read_csv("SAGDP2N__ALL_AREAS_1997_2021.csv", na = c("(L)","(NA)","(D)")) %>%
+  as.tibble() %>%
+  filter(IndustryClassification %>% str_length() == 2) %>% #SUbgroup of Industry Classification
+  filter(!(GeoName %in% 
+             c("Southeast","Far West","Mideast","Great Lakes",
+               "Southeast","Plains","Rocky Mountain","New England",
+               "Puerto Rico", "Southwest", "District of Columbia")
+           )
+         ) %>% #exclusion of Regions data
+  select(c("GeoName","2010":"2021", "Description")
+         ) %>% #Timeframe 2010 to 2021
+  pivot_longer(c("2010":"2021"), 
+               names_to = "year", 
+               values_to = "data") %>% #create Time object
+  mutate(date = years(year)) %>%
+  pivot_wider(names_from = GeoName, #expand into columns of states
+              values_from = data) %>% 
+  nest(-c(Description, year, date, "United States *")) %>% #nest all state GDP
+    mutate( #top3 state with highest GDP 
+      top = map(.x = data, 
+            ~.x %>%
+              pivot_longer(everything(), 
+                           names_to = 'top_state',
+                           values_to = 'gdp_state') %>%
+              mutate(top_state = 
+                       fct_reorder(as.factor(top_state), 
+                                   as.numeric(gdp_state))
+                     ) %>%
+              arrange(desc(as.numeric(gdp_state))) %>% #ordering of state by GDP
+              filter(gdp_state >= {sort(.$gdp_state, decreasing = TRUE)[3]}) #top3
+            ),
+      top_state = map(top, 1), #convert list object into matrix for labeling in plot
+      top_gdp = map(top,2),
+      top_state = matrix(unlist(top_state), ncol = 3, byrow = TRUE),
+      top_gdp  = matrix(unlist(top_gdp), ncol = 3, byrow = TRUE),
+      top_gdp = top_gdp/1000 # in Billion scale
+      ) %>%
+  select(-c(data, top)) %>% #exclude state information 
+  rename("data" = "United States *") #rename
+
+```
+
+
+```{r input_choices, echo = FALSE} 
+#Pull all the different room choices
+yr_choices <- IndustryGDP %>% #year 2010-2021
+  distinct(year) %>%
+  pull()
+
+industry_choice <- IndustryGDP %>%  #Industry type
+  distinct(Description) %>%
+  pull()
+
+gdp_range <- IndustryGDP %>% # GDP range
+  pull(data) %>%
+  range() 
+
+```
+
+Column {.sidebar data-width=300}
+-----------------------------------------------------------------------
+  
+```{r ui, echo = FALSE} 
+
+sliderInput( #slider bar for gdp range
+  inputId = "gdp",
+  label   = h2("GDP Range($)"),
+  min     = gdp_range[1],
+  max     = gdp_range[2],
+  value   = gdp_range, #starting range
+  ticks   = FALSE
+)
+
+sliderInput( #slider bar for year range between 2010 and 2021
+  inputId = "n_year",
+  label   = h2("Year Range"),
+  min     = 2010,
+  max     = 2021,
+  value   = c("2018","2021"), #starting range
+  ticks   = FALSE
+)
+
+checkboxGroupInput( #contains all industries 
+  inputId  = "n_industry",
+  label    = h2("Select Industry Category"),
+  choices  = industry_choice,
+  selected = industry_choice  
+)
+```
+
+```{r input_filter, echo = FALSE}
+#Filter the data based on the inputs above
+#Use reactive expression
+dataFilter <- reactive({
+  #Filter the original data and return as reactive output below
+  IndustryGDP %>% 
+    filter(
+      Description %in% input[["n_industry"]],
+      data > input[["gdp"]][1],
+      data < input[["gdp"]][2]
+      ) %>%
+    mutate(year_compare = year %in% input[["n_year"]], #boolean for Time series plot 
+           year_range = year >= input[["n_year"]][1] & year <= input[["n_year"]][2]) #boolean for barplot
+})
+```
+
+Column {data-width=600}
+-----------------------------------------------------------------------  
+
+### US Industry GDP 
+
+```{r time_series}
+renderPlotly({
+  
+  IndustryGDP <- dataFilter() 
+  Industry.plot2 <- IndustryGDP %>%
+    filter(year_range == 1) %>% #match year range input
+    mutate(Industry = fct_reorder(Description, data),
+           text_label = str_c(Description, #add as text aesthetic
+                       "\nGDP $"  , (data/10^3),"B",                       
+                       "\nTop States: No. 1 ", top_state[,1], " --", top_gdp[,1],"B",
+                       "\n                 : No. 2 ", top_state[,2], " --", top_gdp[,2],"B",
+                       "\n                 : No. 3 ", top_state[,3], " --", top_gdp[,3],"B")
+           ) %>%
+  ggplot(aes(x = year, y = data/1000,  colour = Industry, group = Industry, text = text_label)) + #Billion scale
+  geom_point() +     
+    geom_line(size = 1,
+                alpha = 0.4) +
+    labs(x = "Year", 
+         y = "GDP(Billions of Current Dollar)",
+         fill = "Industry") +
+    # geom_label_repel(aes(label = Industry),
+    #                nudge_x = 1,
+    #                na.rm = TRUE) +
+    theme(legend.position="none") +
+    scale_fill_viridis_c("Percentage",  
+                       alpha = 0.8, 
+                       limits = c(145, 280),
+                       option = "D")
+
+ggplotly(Industry.plot2, tooltip = "text")
+})
+```
+
+### GDP Percentage change from `r reactive({ str_c(input[["n_year"]][1], " to ", input[["n_year"]][2]) })`
+
+```{r price_box}
+renderPlotly({
+  
+  IndustryGDP <- dataFilter()
+  Industry.plot <- IndustryGDP %>% 
+    group_by(Description) %>%
+    filter(year_compare == 1) %>% #2 years for percentage calculation
+      mutate(Percentage = (data-lag(data, n=1))/data,
+           index1 = if_else(is.na(Percentage),"Old", "New"), #align Old year variable and New Year variable 
+           index2 = if_else(is.na(Percentage),"Old_Year", "New_Year")) %>% #align year
+    pivot_wider(names_from = index1, values_from = data) %>% #add 2 new columns, TRUE = OLD value
+    pivot_wider(names_from = index2, values_from = year) %>% #add 2 new columns, TRUE = OLD year
+    mutate(Old = lag(Old, 1), #align
+           Old_Year = lag(Old_Year,1)) %>%
+    ungroup() %>%
+    filter(!is.na(Percentage)) %>%
+    mutate(Industry = fct_reorder(Description, Percentage),
+           Percentage = as.numeric(Percentage),
+           text_label = str_c(Description, #add as text aesthetic
+                       "\n", Old_Year," US GDP: $" , (Old/10^3),"B", 
+                       "\n", New_Year," US GDP: $" , (New/10^3),"B", 
+                       "\nPrecentage Change: ", round(Percentage,2), "%",
+                       "\nTop States: No. 1 ", top_state[,1], " --", top_gdp[,1],"B",
+                       "\n                 : No. 2 ", top_state[,2], " --", top_gdp[,2],"B",
+                       "\n                 : No. 3 ", top_state[,3], " --", top_gdp[,3],"B"
+                       )
+           ) %>%
+    ggplot(aes(x = Industry, y = Percentage, fill = Percentage, text = text_label)) +
+    geom_bar(stat = "identity") +
+    scale_fill_viridis_c("Percentage",  
+                       alpha = 0.8, 
+                       limits = c(-1.3, 0.5),
+                       option = "D") +
+    labs(x = "Industry", 
+         y = "Percentage change",
+         fill = "Percentage Change") +
+     theme(axis.text.x = element_text(angle = 70,
+                                      vjust = 1.24,
+                                      hjust = 1.2,
+                                      size  = 6),
+            axis.text.y = element_text(size  = 10)) +  
+    scale_x_discrete(labels = function(x) str_wrap(x, width = 30),
+                     guide = guide_axis(n.dodge=10)) +
+    # scale_x_discrete()
+    theme(axis.title.x = element_text(margin = margin(t = 45))) 
+    
+ggplotly(Industry.plot, tooltip = "text") 
+})
+```
+
+
+
+ 
